@@ -1,0 +1,501 @@
+from fastapi import APIRouter, HTTPException, status, Depends, FastAPI
+from pydantic import BaseModel
+import mysql.connector
+import logging
+
+# Create an instance of the APIRouter
+user_router = APIRouter()
+# app = FastAPI()
+
+# Database connection parameters
+db_config = {
+    "host": "localhost",
+    "user": "sinch",
+    "password": "Sinchu@333",
+    "database": "_14796a9152410a05",
+}
+
+# # Create a FastAPI app
+# app = FastAPI()
+
+# Define a function to establish a database connection
+def get_database_connection():
+    try:
+        connection = mysql.connector.connect(**db_config)
+        yield connection
+    finally:
+        connection.close()
+
+# Define a data model for user registration
+class UserRegistration(BaseModel):
+    username: str
+    email: str
+    password: str
+
+@user_router.post("/api/register", status_code=status.HTTP_201_CREATED)
+async def register_user(user: UserRegistration, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+    try:
+        # Check if the username already exists in the database
+        query_check_username = "SELECT user_name FROM tabHealth_Care_Users WHERE user_name = %s"
+        values_check_username = (user.username,)
+
+        cursor = db.cursor()
+        cursor.execute(query_check_username, values_check_username)
+        existing_user = cursor.fetchone()
+        
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already exists. Choose a different username.",
+            )
+
+        # Insert the new user into the 'tabHealth_Care_Users' table
+        query_insert_user = "INSERT INTO tabHealth_Care_Users (name, user_name, email, password) VALUES (uuid(), %s, %s, %s)"
+        values_insert_user = (user.username, user.email, user.password)
+
+        cursor.execute(query_insert_user, values_insert_user)
+        db.commit()
+    except mysql.connector.Error as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {err}",
+        )
+    finally:
+        cursor.close()
+
+    return {"message": "User registered successfully"}
+
+
+# Define a data model for user login
+class UserLogin(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+@user_router.post("/api/login")
+async def login_user(user: UserLogin, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+    try:
+        # Check if the username and password match a record in the database
+        query_check_user = "SELECT user_name,email, password FROM tabHealth_Care_Users WHERE user_name = %s AND email = %s AND password = %s"
+        values_check_user = (user.username, user.email, user.password)
+
+        cursor = db.cursor()
+        cursor.execute(query_check_user, values_check_user)
+        result = cursor.fetchone()
+
+        if result:
+            return {"message": "Login successful"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Login failed. Please check your username and password.",
+            )
+    except mysql.connector.Error as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {err}",
+        )
+    finally:
+        cursor.close()
+
+# app.include_router(user_router)
+
+@user_router.get("/api/getUsers")
+async def get_users(db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+    try:
+        query_get_users = "SELECT user_name, email FROM tabHealth_Care_Users"
+        
+        cursor = db.cursor()
+        cursor.execute(query_get_users)
+        
+        # Fetch all users as a list of dictionaries
+        users = []
+        for user_data in cursor.fetchall():
+            user = {
+                "user_name": user_data[0],
+                "email": user_data[1]
+            }
+            users.append(user)
+            print(users)
+        
+        return users
+    except mysql.connector.Error as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {err}",
+        )
+    finally:
+        cursor.close()
+
+# # -------------------- DOCTOR'S API'S------------------
+
+# # Define a function to establish a database connection
+# def get_database_connection():
+#     try:
+#         connection = mysql.connector.connect(**db_config)
+#         yield connection
+#     finally:
+#         connection.close()
+
+# # Create a data model for doctor information
+# class Doctor(BaseModel):
+#     contact: str
+#     specialization: str
+#     qualification: str
+#     license: str
+#     availability: str
+#     doctor_name: str
+#     department: str
+
+# #1. API to fetch all doctors
+# @app.get("/doctors")
+# async def get_doctors(db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor(dictionary=True)
+#         cursor.execute("SELECT * FROM tabDoctor")
+#         doctors = cursor.fetchall()
+#         return doctors
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# #2. API to fetch a particular doctor by ID
+# @app.get("/doctors/{doctor_id}")
+# async def get_doctor(doctor_id: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor(dictionary=True)
+#         cursor.execute("SELECT * FROM tabDoctor WHERE name = %s", (doctor_id,))
+#         doctor = cursor.fetchone()
+#         if not doctor:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Doctor not found",
+#             )
+#         return doctor
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# #3. API to create a new doctor
+# @app.post("/doctors", status_code=status.HTTP_201_CREATED)
+# async def create_doctor(doctor: Doctor, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor()
+#         insert_query = "INSERT INTO tabDoctor (name, contact, specialization, qualification, license, availability, doctor_name, department) VALUES (uuid(), %s, %s, %s, %s, %s, %s, %s)"
+#         values = (
+#             doctor.contact,
+#             doctor.specialization,
+#             doctor.qualification,
+#             doctor.license,
+#             doctor.availability,
+#             doctor.doctor_name,
+#             doctor.department,
+#         )
+#         cursor.execute(insert_query, values)
+#         db.commit()
+#         return {"message": "Doctor created successfully"}
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# #4. API to update doctor information by ID
+# @app.put("/doctors/{doctor_id}")
+# async def update_doctor(doctor_id: str, doctor: Doctor, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor()
+#         update_query = "UPDATE tabDoctor SET contact=%s, specialization=%s, qualification=%s, license=%s, availability=%s, doctor_name=%s, department=%s WHERE name=%s"
+#         values = (
+#             doctor.contact,
+#             doctor.specialization,
+#             doctor.qualification,
+#             doctor.license,
+#             doctor.availability,
+#             doctor.doctor_name,
+#             doctor.department,
+#             doctor_id,
+#         )
+#         cursor.execute(update_query, values)
+#         db.commit()
+#         return {"message": "Doctor updated successfully"}
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# #5. API to delete a doctor by ID
+# @app.delete("/doctors/{doctor_id}")
+# async def delete_doctor(doctor_id: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor()
+#         delete_query = "DELETE FROM tabDoctor WHERE name = %s"
+#         cursor.execute(delete_query, (doctor_id,))
+#         db.commit()
+#         return {"message": "Doctor deleted successfully"}
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# # 6.   API to search for doctors by name or specialization
+# # @app.get("/doctors/search")
+# # async def search_doctors(query: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+# #     try:
+# #         cursor = db.cursor(dictionary=True)
+# #         search_query = "SELECT * FROM tabDoctors WHERE LOWER(doctor_name) LIKE LOWER(%s) OR LOWER(specialization) LIKE LOWER(%s)"
+# #         search_query = "SELECT * FROM tabDoctors WHERE doctor_name LIKE %s OR specialization LIKE %s"
+# #         values = (f"%{query}%", f"%{query}%")
+# #         cursor.execute(search_query, values)
+# #         matched_doctors = cursor.fetchall()  
+            
+# #         if not matched_doctors:
+# #             raise HTTPException(
+# #                 status_code=status.HTTP_404_NOT_FOUND,
+# #                 detail="No matching doctors found",
+# #             )
+        
+# #         return matched_doctors
+# #     except mysql.connector.Error as err:
+# #         raise HTTPException(
+# #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+# #             detail=f"Database error: {err}",
+# #         )
+# #     finally:
+# #         cursor.close()
+
+
+# # API to search for doctors by name or specialization (case-insensitive)
+# # @app.get("/doctors/search")
+# # async def search_doctors(query: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+# #     try:
+# #         cursor = db.cursor(dictionary=True)
+# #         search_query = "SELECT * FROM tabDoctors WHERE LOWER(doctor_name) LIKE %s OR LOWER(specialization) LIKE %s"
+# #         query = f"%{query.lower()}%"  # Convert query to lowercase for comparison
+# #         values = (query, query)
+# #         cursor.execute(search_query, values)
+# #         matched_doctors = cursor.fetchall()
+# #         return matched_doctors
+# #     except mysql.connector.Error as err:
+# #         raise HTTPException(
+# #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+# #             detail=f"Database error: {err}",
+# #         )
+# #     finally:
+# #         cursor.close()
+
+
+
+# #6. API to search for doctors by name or specialization (case-insensitive)
+# # @app.get("/doctors/search")
+# # async def search_doctors(query: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+# #     try:
+# #         cursor = db.cursor(dictionary=True)
+# #         search_query = "SELECT * FROM tabDoctors WHERE LOWER(doctor_name) LIKE %s OR LOWER(specialization) LIKE %s"
+# #         query = f"%{query.lower()}%"  # Convert query to lowercase for comparison
+# #         values = (query,)
+# #         print("Search Query:", search_query)
+# #         print("Search Value:", query)
+# #         cursor.execute(search_query, values)
+# #         matched_doctors = cursor.fetchall()
+# #         print("Matched Doctors:", matched_doctors)
+# #         return matched_doctors
+# #     except mysql.connector.Error as err:
+# #         raise HTTPException(
+# #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+# #             detail=f"Database error: {err}",
+# #         )
+# #     finally:
+# #         cursor.close()
+
+
+
+# # app = FastAPI()
+# # doctor_router = APIRouter()
+
+# # Set up logging
+# logging.basicConfig(level=logging.DEBUG)
+
+
+# # # Define a function to establish a database connection
+# # def get_database_connection():
+# #     try:
+# #         connection = mysql.connector.connect(**db_config)
+# #         yield connection
+# #     finally:
+# #         connection.close()
+
+# # # ... (Other code remains the same)
+
+# # # API to search for doctors by name or specialization (case-insensitive)
+# # @app.get("/doctors/search")
+# # async def search_doctors(query: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+# #     try:
+# #         cursor = db.cursor(dictionary=True)
+# #         search_query = "SELECT * FROM tabDoctors WHERE LOWER(doctor_name) LIKE %s OR LOWER(specialization) LIKE %s"
+# #         query = f"%{query.lower()}%"  # Convert query to lowercase for comparison
+# #         values = (query, query)
+# #         logging.debug("Search Query: %s", search_query)
+# #         logging.debug("Search Value: %s", query)
+# #         cursor.execute(search_query, values)
+# #         matched_doctors = cursor.fetchall()
+# #         logging.debug("Matched Doctors: %s", matched_doctors)
+# #         return matched_doctors
+# #     except mysql.connector.Error as err:
+# #         raise HTTPException(
+# #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+# #             detail=f"Database error: {err}",
+# #         )
+# #     finally:
+# #         cursor.close()
+
+
+
+# # ------------- PATIENT'S API -------------
+
+# # Create a data model for patient information
+# class Patient(BaseModel):
+#     patient_name: str
+#     email: str = None
+#     address: str = None
+#     dob: str = None
+#     gender: str = None
+#     medical_history: str = None
+#     current_medications: str = None
+
+# # 1. API to fetch all patients
+# @app.get("/patients")
+# async def get_patients(db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor(dictionary=True)
+#         cursor.execute("SELECT * FROM tabPatient")
+#         patients = cursor.fetchall()
+#         return patients
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# # 2. API to fetch a particular patient by ID
+# @app.get("/patients/{patient_id}")
+# async def get_patient(patient_id: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor(dictionary=True)
+#         cursor.execute("SELECT * FROM tabPatient WHERE name = %s", (patient_id,))
+#         patient = cursor.fetchone()
+#         if not patient:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail="Patient not found",
+#             )
+#         return patient
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# # 3. API to create a new patient
+# @app.post("/patients", status_code=status.HTTP_201_CREATED)
+# async def create_patient(patient: Patient, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor()
+#         insert_query = "INSERT INTO tabPatient (name, patient_name, email, address, dob, gender, medical_history, current_medications) VALUES (uuid() , %s, %s, %s, %s, %s, %s, %s)"
+#         values = (
+#             patient.patient_name,
+#             patient.email,
+#             patient.address,
+#             patient.dob,
+#             patient.gender,
+#             patient.medical_history,
+#             patient.current_medications,
+#         )
+#         cursor.execute(insert_query, values)
+#         db.commit()
+#         return {"message": "Patient created successfully"}
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# # 4. API to update patient information by ID
+# @app.put("/patients/{patient_id}")
+# async def update_patient(
+#     patient_id: str,
+#     patient: Patient,
+#     db: mysql.connector.MySQLConnection = Depends(get_database_connection)
+# ):
+#     try:
+#         cursor = db.cursor()
+#         update_query = "UPDATE tabPatient SET patient_name=%s, email=%s, address=%s, dob=%s, gender=%s, medical_history=%s, current_medications=%s WHERE name=%s"
+#         values = (
+#             patient.patient_name,
+#             patient.email,
+#             patient.address,
+#             patient.dob,
+#             patient.gender,
+#             patient.medical_history,
+#             patient.current_medications,
+#             patient_id,
+#         )
+#         cursor.execute(update_query, values)
+#         db.commit()
+#         return {"message": "Patient updated successfully"}
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+# # 5. API to delete a patient by ID
+# @app.delete("/patients/{patient_id}")
+# async def delete_patient(patient_id: str, db: mysql.connector.MySQLConnection = Depends(get_database_connection)):
+#     try:
+#         cursor = db.cursor()
+#         delete_query = "DELETE FROM tabPatient WHERE name = %s"
+#         cursor.execute(delete_query, (patient_id,))
+#         db.commit()
+#         return {"message": "Patient deleted successfully"}
+#     except mysql.connector.Error as err:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"Database error: {err}",
+#         )
+#     finally:
+#         cursor.close()
+
+
+
+
+
+# # Include the doctor_router in the main app
+# # app.include_router(doctor_router)
+# # app.include_router(patient_router, prefix="/api")
+
