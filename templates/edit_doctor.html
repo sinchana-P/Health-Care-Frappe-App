@@ -1,0 +1,87 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+    <div class="edit-doctor-box">
+        <div class="edit-doctor-logo">
+            <a href="#"><b>Edit</b> Doctor</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body edit-doctor-card-body">
+                <form method="post" action="{{ url_for('edit_doctor', doctor_id=doctor.name) }}">
+                    <div class="container">
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <div class="input-group mb-3" title="Doctor Name">
+                                    <input type="text" title="Doctor Name" class="form-control" placeholder="Doctor Name" name="doctor_name" value="{{ doctor.doctor_name }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <span class="fas fa-user-md"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-3" title="Department">
+                                    <input type="text" title="Department" class="form-control" placeholder="Department" name="department" value="{{ doctor.department }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <span class="fas fa-hospital"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-3" title="Contact">
+                                    <input type="text" title="Contact" class="form-control" placeholder="Contact" name="contact" value="{{ doctor.contact }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <span class="fas fa-phone"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-3" title="Specialization">
+                                    <input type="text" title="Specialization" class="form-control" placeholder="Specialization" name="specialization" value="{{ doctor.specialization }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <span class="fas fa-certificate"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-3" title="Qualification">
+                                    <input type="text" title="Qualification" class="form-control" placeholder="Qualification" name="qualification" value="{{ doctor.qualification }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <span class="fas fa-graduation-cap"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-3" title="License">
+                                    <input type="text" title="License" class="form-control" placeholder="License" name="license" value="{{ doctor.license }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <span class="fas fa-id-card"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group mb-3" title="Availability">
+                                    <input type="text" title="Availability" class="form-control" placeholder="Availability" name="availability" value="{{ doctor.availability }}">
+                                    <div class="input-group-append">
+                                        <div class="input-group-text">
+                                            <span class="fas fa-clock"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary btn-block">Save Changes</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <a href="{{ url_for('doctors') }}" class="text-center">Back to Doctor Listing</a>
+            </div>
+            <!-- /.form-box -->
+        </div><!-- /.card -->
+    </div>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+
+
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0">Manage Doctors</h1>
+          </div><!-- /.col -->
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="{{url_for("dashboard")}}">Home</a></li>
+              <li class="breadcrumb-item active">Manage Doctors</li>
+            </ol>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+            <h3>Book Listing</h3>
+            <br>
+            <!-- ADD BUTTON -->
+            <div class="float-right mb-2 col-md-2">
+                <button type="button" id="addBook" class="btn btn-info" title="Add book"><span class="glyphicon glyphicon-plus">Add Book</span></button>
+            </div>
+            <br><br>            
+            <table class="table table-striped">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Book</th>
+                <th>ISBN</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}           
+                    <tr>
+                      <td>
+                      {% if book.picture %}
+                          <img src="../static/images/{{book.picture}}" width="80" height="90">
+                      {% else %}
+                          <img src="../static/images/default.jpg" width="80" height="90">
+                      {% endif %}                   
+                      </td>
+                      <td>{{book.name}}</td>
+                      <td>{{book.isbn}}</td>            
+                      <td><a href="{{url_for('edit_book', bookid=book.bookid)}}" class="btn btn-primary">Edit</a></td>  
+                      <td><a href="{{url_for('delete_book', bookid=book.bookid)}}" class="btn btn-danger">Delete</a></td>
+                    </tr> 
+              {% endfor %}    
+              </tbody>
+          </table>    
+        </div>
+      </div><!-- /.container-fluid -->
+    </section>
+
+    <!-- BOOK MODAL Starts -->
+    <div class="modal fade" id="bookModal">
+        <div class="modal-dialog">
+            <form method="post" id="bookForm" action="{{ url_for('save_book')}}" enctype="multipart/form-data">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h4 class="modal-title">Add New</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+                </div>
+                <!-- FORM - MODAL BODY -->
+                <div class="modal-body">
+                    <div class="form-group">                          
+                        <label for="book" class="control-label">Book</label>                            
+                        <input type="text" name="name" id="name" autocomplete="off" class="form-control" placeholder="book name"/>
+                                         
+                    </div>
+                    <div class="form-group">                          
+                        <label for="book" class="control-label">ISBN No</label>                         
+                        <input type="text" name="isbn" id="isbn" autocomplete="off" class="form-control" placeholder="isbn name"/>        
+                    </div>
+                    <div class="form-group">
+                        <label>File Upload</label>
+                        <input type="file" name="uploadFile" accept=".jpg, .png" />
+                    </div>
+                <!-- FORM - MODAL BODY ENDS -->
+
+                </div>
+                <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <input type="hidden" name="action" id="action" value="" />
+                <input type="submit" name="save" id="save" class="btn btn-primary" value="Save changes" />
+                </div>
+            </div>
+            </form>
+          <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+
+    <!-- BOOK MODAL ENDS -->
+
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <!-- Small boxes (Stat box) -->
+        <div class="row">
+            <h3>Doctors Listing</h3>
+            <br>
+            <div class="float-right mb-2 col-md-2">
+                <button type="button" id="addBook" class="btn btn-info" title="Add book">
+                    <span class="glyphicon glyphicon-plus">
+                            Add Button
+                    </span>
+                    
+                </button>
+            </div>
+        </div>
+      </div>
+    </section> 
+
+{% endblock %}
+
+

@@ -1,0 +1,193 @@
+{% extends 'layout.html' %}
+  
+{% block body %}
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0">Manage Doctors</h1>
+          </div><!-- /.col -->
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item active">Manage Doctors</li>
+            </ol>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+ 
+    <!-- Main content -->
+    <section class="content">
+      <div class="container-fluid">
+        <div class="row">
+            <h3>Doctor Listing</h3>
+            <br>
+            <div class="float-right mb-2 col-md-2">
+                <button type="button" id="addDoctor" class="btn btn-info" title="Add Doctor"><span class="glyphicon glyphicon-plus">Add Doctor</span></button>
+            </div>
+            <br><br>            
+            <table class="table table-striped">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Doctor Name</th>
+                <th>Department</th>
+                <th>Contact</th>
+                <th>Specialization</th>
+                <th>Qualification</th>
+                <th>License</th>
+                <th>Availability</th>
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for doctor in doctors %}           
+                    <tr>
+                       <td>
+                            {% if doctor.picture %}
+                                <img src="../static/images/{{doctor.picture}}" alt="Doctor Image" width="80" height="90">
+                            {% else %}
+                                <img src="{{url_for('static',filename='img/doctor-m.jpg')}}" alt="Default Image" width="80" height="90">
+                            {% endif %}
+                        </td>
+                        
+                        <td>{{doctor.doctor_name}}</td>
+                        <td>{{doctor.department}}</td>            
+                        <td>{{doctor.contact}}</td>
+                        <td>{{doctor.specialization}}</td>
+                        <td>{{doctor.qualification}}</td>
+                        <td>{{doctor.license}}</td>
+                        <td>{{doctor.availability}}</td>
+                        <td>
+                            <a href="{{ url_for('edit_doctor', doctor_id=doctor.name) }}" class="editDoctor">
+                                <i class="fa-regular fa-pen-to-square"></i>
+                              
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('delete_doctor', doctor_id=doctor.name) }}" class="deleteDoctor">
+                                  <i class="fa-solid fa-trash" style="color: #e43f3f;"></i>
+                                
+                            </a>
+                        </td>
+
+
+
+                    </tr> 
+              {% endfor %}    
+              </tbody>
+          </table>    
+        </div>
+      </div><!-- /.container-fluid -->
+    </section>
+    <!-- /.content -->
+
+    <!-- Add Doctor Modal -->
+    <div class="modal fade" id="doctorModal">
+        <div class="modal-dialog">
+            <form method="post" id="doctorForm" action="{{ url_for('save_doctor')}}" enctype="multipart/form-data">
+                <div class="modal-content">
+                    <!-- ... (your existing modal content) ... -->
+
+                    <div class="modal-body">
+                        <div class="form-group">                          
+                            <label for="doctorName" class="control-label">Doctor Name</label>                            
+                            <input type="text" name="doctor_name" id="doctor_name" autocomplete="off" class="form-control" placeholder="Doctor name"/>                                        
+                        </div>
+                        <div class="form-group">                          
+                            <label for="department" class="control-label">Department</label>                         
+                            <input type="text" name="department" id="department" autocomplete="off" class="form-control" placeholder="Department"/>        
+                        </div>
+                        <div class="form-group">                          
+                            <label for="contact" class="control-label">Contact</label>                         
+                            <input type="text" name="contact" id="contact" autocomplete="off" class="form-control" placeholder="Contact"/>        
+                        </div>
+                        <div class="form-group">                          
+                            <label for="specialization" class="control-label">Specialization</label>                         
+                            <input type="text" name="specialization" id="specialization" autocomplete="off" class="form-control" placeholder="Specialization"/>        
+                        </div>
+                        <div class="form-group">                          
+                            <label for="qualification" class="control-label">Qualification</label>                         
+                            <input type="text" name="qualification" id="qualification" autocomplete="off" class="form-control" placeholder="Qualification"/>        
+                        </div>
+                        <div class="form-group">                          
+                            <label for="license" class="control-label">License</label>                         
+                            <input type="text" name="license" id="license" autocomplete="off" class="form-control" placeholder="License"/>        
+                        </div>
+                        <div class="form-group">                          
+                            <label for="availability" class="control-label">Availability</label>                         
+                            <input type="text" name="availability" id="availability" autocomplete="off" class="form-control" placeholder="Availability"/>        
+                        </div>
+                        <!-- Add more form fields for other doctor attributes as needed -->
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <input type="submit" name="save" class="btn btn-primary" value="Save Doctor" />
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+
+<!-- jQuery -->
+  <script src="{{ url_for('static',filename='plugins/jquery/jquery.min.js') }}"></script>
+
+
+<script>
+    $(document).ready(function () {
+        // Add Doctor
+        $('#addDoctor').click(function () {
+            $('#doctorModal').modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            $('#doctorModal').on('shown.bs.modal', function () {
+                $('#doctorForm')[0].reset();
+                $('.modal-title').html("<i class='fa fa-plus'></i> Add Doctor");
+            });
+
+            $('#doctorForm').submit(function (e) {
+                e.preventDefault();
+
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    type: 'POST',
+                    url: $(this).attr('action'),
+                    data: formData,
+                    success: function (response) {
+                        console.log(response);
+                        $('#doctorModal').modal('hide');
+                        // Reload or update doctor listing if needed
+                        // window.location.reload();
+                    },
+                    error: function (error) {
+                        console.error(error);
+                    }
+                });
+            });
+        });
+
+
+    });
+</script>
+
+
+
+
+
+
+
+{% endblock %}
+
+
+
